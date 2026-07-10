@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AquaFeed Adventure</title>
+    <!-- Google Fonts: Outfit for clean, modern, friendly look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app-container">
+        <!-- Game Canvas -->
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Dynamic Light Rays & Bubbles background styling handled via CSS & Canvas -->
+
+        <!-- HUD (Heads-Up Display) -->
+        <header id="hud">
+            <div class="hud-item money-container">
+                <span class="hud-icon">🪙</span>
+                <span id="coin-count" class="hud-value">0</span>
+            </div>
+            <div class="hud-item fish-container">
+                <span class="hud-icon">🐠</span>
+                <span id="fish-count" class="hud-value">0</span>
+            </div>
+            <button id="btn-stats" class="hud-btn" aria-label="Open Stats">📊</button>
+        </header>
+
+        <!-- Interactive notifications overlay -->
+        <div id="toast-container"></div>
+
+        <!-- Shop Drawer (Toggles open/close at the bottom) -->
+        <div id="shop-drawer" class="closed">
+            <div class="drawer-handle-bar" id="drawer-handle">
+                <div class="handle-indicator"></div>
+                <div class="drawer-title">Aquarium Shop</div>
+            </div>
+            <div class="shop-items">
+                <!-- Buy Guppy Card -->
+                <button class="shop-card" id="shop-buy-fish">
+                    <div class="card-emoji">🐠</div>
+                    <div class="card-info">
+                        <span class="card-name">Buy Guppy</span>
+                        <span class="card-cost" id="cost-buy-fish">🪙 100</span>
+                    </div>
+                </button>
+
+                <!-- Food Capacity Upgrade -->
+                <button class="shop-card" id="shop-upgrade-food-qty">
+                    <div class="card-emoji">🍒</div>
+                    <div class="card-info">
+                        <span class="card-name">Max Food (+1)</span>
+                        <span class="card-cost" id="cost-food-qty">🪙 200</span>
+                    </div>
+                </button>
+
+                <!-- Food Quality Upgrade -->
+                <button class="shop-card" id="shop-upgrade-food-qual">
+                    <div class="card-emoji">🧪</div>
+                    <div class="card-info">
+                        <span class="card-name">Food Quality</span>
+                        <span class="card-cost" id="cost-food-qual">🪙 300</span>
+                    </div>
+                </button>
+
+                <!-- Buy Snail Helper -->
+                <button class="shop-card" id="shop-buy-snail">
+                    <div class="card-emoji">🐚</div>
+                    <div class="card-info">
+                        <span class="card-name">Snail Helper</span>
+                        <span class="card-cost" id="cost-buy-snail">🪙 500</span>
+                    </div>
+                </button>
+
+                <!-- Buy Egg Part (Win progression) -->
+                <button class="shop-card" id="shop-buy-egg">
+                    <div class="card-emoji">🪺</div>
+                    <div class="card-info">
+                        <span class="card-name">Egg Part <span id="egg-progress">0/3</span></span>
+                        <span class="card-cost" id="cost-buy-egg">🪙 1000</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- Modals: Stats / Reset / Victory -->
+        <div id="modal-overlay" class="hidden">
+            <!-- Stats Modal -->
+            <div id="stats-modal" class="modal-content hidden">
+                <h2>Aquarium Stats</h2>
+                <div class="stats-grid">
+                    <div class="stat-row"><span>Total Coins Collected:</span> <span id="stat-total-coins">0</span></div>
+                    <div class="stat-row"><span>Fish Purchased:</span> <span id="stat-fish-purchased">0</span></div>
+                    <div class="stat-row"><span>Food Dropped:</span> <span id="stat-food-dropped">0</span></div>
+                    <div class="stat-row"><span>Time Elapsed:</span> <span id="stat-time-elapsed">0s</span></div>
+                </div>
+                <div class="modal-actions">
+                    <button id="btn-reset-game" class="danger-btn">Reset Progress</button>
+                    <button id="btn-close-stats" class="primary-btn">Close</button>
+                </div>
+            </div>
+
+            <!-- Victory Modal -->
+            <div id="victory-modal" class="modal-content hidden">
+                <div class="victory-emoji">🏆</div>
+                <h2>Victory Achieved!</h2>
+                <p>You have hatched the Golden Egg and unlocked the secrets of the deep blue sea!</p>
+                <div class="modal-actions">
+                    <button id="btn-victory-continue" class="primary-btn">Keep Playing</button>
+                    <button id="btn-victory-reset" class="danger-btn">Start Anew</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts using ES Modules -->
+    <script type="module" src="game.js"></script>
+</body>
+</html>
