@@ -156,7 +156,7 @@ export const audio = new AudioManager();
 export class GameState {
     constructor() {
         this.defaultState = {
-            coins: 150,
+            coins: Infinity,
             fishCount: 0,
             maxFood: 2,
             foodQuality: 1, // 1: Raw, 2: Roasted, 3: Golden Deluxe
@@ -164,7 +164,7 @@ export class GameState {
             eggProgress: 0, // 0 to 3
             feedTargetName: '', // Question input
             stats: {
-                totalCoins: 150,
+                totalCoins: Infinity,
                 fishPurchased: 0,
                 foodDropped: 0,
                 timeElapsed: 0
@@ -187,6 +187,9 @@ export class GameState {
         } else {
             this.state = { ...this.defaultState };
         }
+        // Ensure infinite credits
+        this.state.coins = Infinity;
+        this.state.stats.totalCoins = Infinity;
     }
 
     save() {
