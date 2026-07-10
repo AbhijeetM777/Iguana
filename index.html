@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AquaFeed Adventure</title>
+    <title>Iguana Feeder</title>
     <!-- Google Fonts: Outfit for clean, modern, friendly look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,8 +15,6 @@
         <!-- Game Canvas -->
         <canvas id="game-canvas"></canvas>
 
-        <!-- Dynamic Light Rays & Bubbles background styling handled via CSS & Canvas -->
-
         <!-- HUD (Heads-Up Display) -->
         <header id="hud">
             <div class="hud-item money-container">
@@ -24,7 +22,7 @@
                 <span id="coin-count" class="hud-value">0</span>
             </div>
             <div class="hud-item fish-container">
-                <span class="hud-icon">🐠</span>
+                <span class="hud-icon">🦎</span>
                 <span id="fish-count" class="hud-value">0</span>
             </div>
             <button id="btn-stats" class="hud-btn" aria-label="Open Stats">📊</button>
@@ -37,23 +35,23 @@
         <div id="shop-drawer" class="closed">
             <div class="drawer-handle-bar" id="drawer-handle">
                 <div class="handle-indicator"></div>
-                <div class="drawer-title">Aquarium Shop</div>
+                <div class="drawer-title">Jungle Shop</div>
             </div>
             <div class="shop-items">
-                <!-- Buy Guppy Card -->
+                <!-- Buy Iguana Card -->
                 <button class="shop-card" id="shop-buy-fish">
-                    <div class="card-emoji">🐠</div>
+                    <div class="card-emoji">🦎</div>
                     <div class="card-info">
-                        <span class="card-name">Buy Guppy</span>
+                        <span class="card-name">Buy Iguana</span>
                         <span class="card-cost" id="cost-buy-fish">🪙 100</span>
                     </div>
                 </button>
 
                 <!-- Food Capacity Upgrade -->
                 <button class="shop-card" id="shop-upgrade-food-qty">
-                    <div class="card-emoji">🍒</div>
+                    <div class="card-emoji">🍗</div>
                     <div class="card-info">
-                        <span class="card-name">Max Food (+1)</span>
+                        <span class="card-name">Max Chicken (+1)</span>
                         <span class="card-cost" id="cost-food-qty">🪙 200</span>
                     </div>
                 </button>
@@ -62,16 +60,16 @@
                 <button class="shop-card" id="shop-upgrade-food-qual">
                     <div class="card-emoji">🧪</div>
                     <div class="card-info">
-                        <span class="card-name">Food Quality</span>
+                        <span class="card-name">Chicken Quality</span>
                         <span class="card-cost" id="cost-food-qual">🪙 300</span>
                     </div>
                 </button>
 
-                <!-- Buy Snail Helper -->
+                <!-- Buy Tortoise Helper -->
                 <button class="shop-card" id="shop-buy-snail">
-                    <div class="card-emoji">🐚</div>
+                    <div class="card-emoji">🐢</div>
                     <div class="card-info">
-                        <span class="card-name">Snail Helper</span>
+                        <span class="card-name">Tortoise Helper</span>
                         <span class="card-cost" id="cost-buy-snail">🪙 500</span>
                     </div>
                 </button>
@@ -87,15 +85,27 @@
             </div>
         </div>
 
-        <!-- Modals: Stats / Reset / Victory -->
-        <div id="modal-overlay" class="hidden">
+        <!-- Modals: Name Input / Stats / Victory / Overlay -->
+        <div id="modal-overlay">
+            <!-- Name Input Modal -->
+            <div id="name-modal" class="modal-content">
+                <h2>Iguana Sanctuary</h2>
+                <p>Whom do you want to feed to the iguanas?</p>
+                <div class="input-container">
+                    <input type="text" id="input-target-name" placeholder="Enter a name..." maxlength="15" autocomplete="off">
+                </div>
+                <div class="modal-actions">
+                    <button id="btn-start-game" class="primary-btn">Start Game</button>
+                </div>
+            </div>
+
             <!-- Stats Modal -->
             <div id="stats-modal" class="modal-content hidden">
-                <h2>Aquarium Stats</h2>
+                <h2>Sanctuary Stats</h2>
                 <div class="stats-grid">
                     <div class="stat-row"><span>Total Coins Collected:</span> <span id="stat-total-coins">0</span></div>
-                    <div class="stat-row"><span>Fish Purchased:</span> <span id="stat-fish-purchased">0</span></div>
-                    <div class="stat-row"><span>Food Dropped:</span> <span id="stat-food-dropped">0</span></div>
+                    <div class="stat-row"><span>Iguanas Purchased:</span> <span id="stat-fish-purchased">0</span></div>
+                    <div class="stat-row"><span>Chicken Fed:</span> <span id="stat-food-dropped">0</span></div>
                     <div class="stat-row"><span>Time Elapsed:</span> <span id="stat-time-elapsed">0s</span></div>
                 </div>
                 <div class="modal-actions">
@@ -107,8 +117,8 @@
             <!-- Victory Modal -->
             <div id="victory-modal" class="modal-content hidden">
                 <div class="victory-emoji">🏆</div>
-                <h2>Victory Achieved!</h2>
-                <p>You have hatched the Golden Egg and unlocked the secrets of the deep blue sea!</p>
+                <h2>Sanctuary Savior!</h2>
+                <p>You have successfully hatched the Golden Dragon Egg and fed your iguanas to completion!</p>
                 <div class="modal-actions">
                     <button id="btn-victory-continue" class="primary-btn">Keep Playing</button>
                     <button id="btn-victory-reset" class="danger-btn">Start Anew</button>

@@ -1,6 +1,6 @@
-// Fish Class with autonomous steering behaviors, hunger states, growth, and procedural drawing
+// Iguana Class with autonomous steering, hunger decay, growth, and procedural lizard rendering
 
-export class Fish {
+export class Iguana {
     constructor(x, y) {
         this.x = x;
         this.y = y;
@@ -8,50 +8,53 @@ export class Fish {
         this.vy = (Math.random() - 0.5) * 2;
         
         // Physics constants
-        this.maxSpeed = 1.8;
+        this.maxSpeed = 1.6;
         this.maxForce = 0.08;
         
         // Growth details
         this.growthPoints = 0;
-        this.level = 1; // 1: Baby, 2: Medium, 3: Adult
+        this.level = 1; // 1: Baby, 2: Growing, 3: Alpha Dragon
         
         // Hunger details
-        this.hunger = 100; // 0 to 100
+        this.hunger = 100;
         this.hungerDecay = 0.08 + Math.random() * 0.04;
         
         // Animation states
         this.wiggle = 0;
-        this.wiggleSpeed = 0.15;
+        this.wiggleSpeed = 0.12;
         this.isFacingRight = this.vx > 0;
         
         // Coin drop timer
         this.coinTimer = 0;
         this.coinInterval = 600 + Math.random() * 400; // frames (~10-15s)
 
-        // Random offset for wander logic
         this.wanderAngle = Math.random() * Math.PI * 2;
         
         this.isDead = false;
         this.deathTimer = 0;
+        
+        // Tongue dart animation frame count
+        this.tongueTimer = 0;
     }
 
     update(foods, canvasWidth, canvasHeight, onSpawnCoin) {
         if (this.isDead) {
-            // Sinks or floats belly up
-            this.vy = -1.0; // Floats slowly to top
-            this.vx = Math.sin(this.deathTimer * 0.05) * 0.5; // Sway back and forth
+            // Sinks to bottom/floats upside down
+            this.vy = 1.0; // Dies and sinks to bottom
+            this.vx = Math.sin(this.deathTimer * 0.05) * 0.4;
             this.y += this.vy;
             this.x += this.vx;
             this.deathTimer++;
             
-            // Constrain to top
-            if (this.y < 30) {
-                this.y = 30;
+            // Constrain to ground
+            if (this.y > canvasHeight - 35) {
+                this.y = canvasHeight - 35;
+                this.vx = 0;
             }
             return;
         }
 
-        // 1. Hunger updates
+        // Hunger updates
         this.hunger -= this.hungerDecay;
         if (this.hunger <= 0) {
             this.hunger = 0;
@@ -59,18 +62,16 @@ export class Fish {
             return;
         }
 
-        // Wiggle animation
         this.wiggle += this.wiggleSpeed;
 
-        // 2. Behavioral steering: Wandering or Seeking food
+        // Steering force calculation
         let steerX = 0;
         let steerY = 0;
 
-        const isHungry = this.hunger < 60;
+        const isHungry = this.hunger < 70;
         let targetFood = null;
 
         if (isHungry && foods.length > 0) {
-            // Find closest food
             let closestDist = Infinity;
             for (const food of foods) {
                 if (food.isEaten) continue;
@@ -83,7 +84,6 @@ export class Fish {
         }
 
         if (targetFood) {
-            // Seek food
             const targetX = targetFood.x;
             const targetY = targetFood.y;
             
@@ -92,7 +92,7 @@ export class Fish {
             const d = Math.hypot(desiredX, desiredY);
             
             if (d > 0) {
-                const speed = isHungry ? this.maxSpeed * 1.3 : this.maxSpeed;
+                const speed = isHungry ? this.maxSpeed * 1.35 : this.maxSpeed;
                 const targetVx = (desiredX / d) * speed;
                 const targetVy = (desiredY / d) * speed;
                 
@@ -100,19 +100,19 @@ export class Fish {
                 steerY = targetVy - this.vy;
             }
 
-            // Check collision with food (Eat)
-            const eatDistance = 15 + this.level * 4;
+            // Eat detection
+            const eatDistance = 20 + this.level * 4;
             if (d < eatDistance) {
                 targetFood.isEaten = true;
                 this.hunger = Math.min(100, this.hunger + targetFood.nutrition);
                 this.growthPoints += targetFood.nutrition;
                 this.checkGrowth();
-                // Return eat trigger
                 this.hasEaten = true;
+                this.tongueTimer = 15; // Trigger tongue dart animation
             }
         } else {
-            // Wander behavior (Steer towards a changing angle)
-            this.wanderAngle += (Math.random() - 0.5) * 0.5;
+            // Wander
+            this.wanderAngle += (Math.random() - 0.5) * 0.4;
             const wanderVx = Math.cos(this.wanderAngle) * this.maxSpeed;
             const wanderVy = Math.sin(this.wanderAngle) * this.maxSpeed;
             
@@ -120,7 +120,6 @@ export class Fish {
             steerY = wanderVy - this.vy;
         }
 
-        // Apply steering force
         const steerLength = Math.hypot(steerX, steerY);
         if (steerLength > this.maxForce) {
             steerX = (steerX / steerLength) * this.maxForce;
@@ -130,16 +129,14 @@ export class Fish {
         this.vx += steerX;
         this.vy += steerY;
 
-        // Apply velocities
         this.x += this.vx;
         this.y += this.vy;
 
-        // Orientation
         if (Math.abs(this.vx) > 0.1) {
             this.isFacingRight = this.vx > 0;
         }
 
-        // Boundary collision / wrapping safely
+        // Boundary constraints
         const buffer = 40;
         if (this.x < buffer) {
             this.x = buffer;
@@ -151,15 +148,15 @@ export class Fish {
             this.wanderAngle = Math.PI - this.wanderAngle;
         }
 
-        if (this.y < buffer + 40) { // Keep space for HUD
+        if (this.y < buffer + 40) {
             this.y = buffer + 40;
             this.vy *= -1;
-        } else if (this.y > canvasHeight - 70) { // Keep space for Shop
-            this.y = canvasHeight - 70;
+        } else if (this.y > canvasHeight - 80) {
+            this.y = canvasHeight - 80;
             this.vy *= -1;
         }
 
-        // 3. Coin Spawning Logic
+        // Coin drop timer
         this.coinTimer++;
         if (this.coinTimer >= this.coinInterval) {
             this.coinTimer = 0;
@@ -168,15 +165,20 @@ export class Fish {
             if (this.level === 3) val = 75;
             onSpawnCoin(this.x, this.y, val);
         }
+
+        // Tongue animation timer countdown
+        if (this.tongueTimer > 0) {
+            this.tongueTimer--;
+        }
     }
 
     checkGrowth() {
         if (this.level === 1 && this.growthPoints >= 100) {
             this.level = 2;
-            this.maxSpeed = 2.1;
+            this.maxSpeed = 1.9;
         } else if (this.level === 2 && this.growthPoints >= 300) {
             this.level = 3;
-            this.maxSpeed = 2.4;
+            this.maxSpeed = 2.2;
         }
     }
 
@@ -184,128 +186,122 @@ export class Fish {
         ctx.save();
         ctx.translate(this.x, this.y);
         
-        // Flip fish orientation based on moving direction
         if (!this.isFacingRight) {
             ctx.scale(-1, 1);
         }
 
-        // Size scalars based on growth level
-        const sizeScale = 0.8 + (this.level * 0.25);
+        const sizeScale = 0.75 + (this.level * 0.3);
         ctx.scale(sizeScale, sizeScale);
 
-        // Compute colors based on level & hunger
-        let bodyColor = '#ff7f50'; // Baby Coral
-        let stripeColor = '#ffffff';
+        // Core colors: Forest greens/yellows
+        let bodyColor = '#2ecc71'; // Neon Green
+        let spikeColor = '#e67e22'; // Orange Spikes
 
         if (this.level === 2) {
-            bodyColor = '#ff9f43'; // Medium Amber
-            stripeColor = '#00d2ff';
+            bodyColor = '#1abc9c'; // Turquoise
+            spikeColor = '#f1c40f'; // Gold spikes
         } else if (this.level === 3) {
-            bodyColor = '#ff6b6b'; // Adult Neon Pink-Red
-            stripeColor = '#ffd700';
+            bodyColor = '#27ae60'; // Darker green alpha
+            spikeColor = '#e74c3c'; // Fire red spikes
         }
 
-        // If starving (hunger < 20)
         if (this.hunger < 20) {
-            bodyColor = '#808e9b'; // Greyish/sick
-            stripeColor = '#485460';
+            bodyColor = '#7f8c8d'; // Starved grey
+            spikeColor = '#34495e';
         } else if (this.hunger < 50) {
-            // Sickish green tint overlay/blend
-            bodyColor = '#10ac84';
+            bodyColor = '#d35400'; // Rusty warning orange
         }
 
         if (this.isDead) {
-            bodyColor = '#57606f';
-            stripeColor = '#2f3542';
-            ctx.scale(1, -1); // Float belly up
+            bodyColor = '#535c68';
+            spikeColor = '#30336b';
+            ctx.scale(1, -1); // Flip upside down
         }
 
-        // Draw Back Tail Fin with waving motion
+        // 1. Draw Legs (Wiggling walk cycle)
+        ctx.fillStyle = bodyColor;
+        const frontLegWiggle = Math.sin(this.wiggle) * 4;
+        const backLegWiggle = Math.cos(this.wiggle) * 4;
+
+        // Front leg
         ctx.save();
-        ctx.translate(-24, 0);
-        const tailWiggle = Math.sin(this.wiggle) * 0.25;
+        ctx.translate(10, 6);
+        ctx.rotate(frontLegWiggle * 0.1);
+        ctx.beginPath();
+        ctx.roundRect(-3, 0, 6, 12, 3);
+        ctx.fill();
+        ctx.restore();
+
+        // Back leg
+        ctx.save();
+        ctx.translate(-12, 6);
+        ctx.rotate(backLegWiggle * 0.1);
+        ctx.beginPath();
+        ctx.roundRect(-3, 0, 6, 12, 3);
+        ctx.fill();
+        ctx.restore();
+
+        // 2. Draw Long Tail (Waving)
+        ctx.save();
+        ctx.translate(-24, -2);
+        const tailWiggle = Math.sin(this.wiggle * 0.8) * 0.3;
         ctx.rotate(tailWiggle);
         ctx.beginPath();
         ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(-15, -18, -25, -15, -28, -20);
-        ctx.bezierCurveTo(-24, -5, -20, 0, -28, 0);
-        ctx.bezierCurveTo(-20, 0, -24, 5, -28, 20);
-        ctx.bezierCurveTo(-25, 15, -15, 18, 0, 0);
+        ctx.bezierCurveTo(-20, -6, -30, 8, -45, tailWiggle * 10);
+        ctx.bezierCurveTo(-30, 2, -15, 6, 0, 4);
         ctx.fillStyle = bodyColor;
-        ctx.fill();
-        // Inner tail highlights
-        ctx.fillStyle = stripeColor;
-        ctx.beginPath();
-        ctx.moveTo(-8, 0);
-        ctx.lineTo(-20, -10);
-        ctx.lineTo(-18, 0);
-        ctx.lineTo(-20, 10);
-        ctx.closePath();
         ctx.fill();
         ctx.restore();
 
-        // Main Body Ellipse
+        // 3. Draw Back Spikes / Crest
+        ctx.fillStyle = spikeColor;
+        for (let i = -16; i <= 8; i += 6) {
+            const spikeHeight = 4 + Math.sin(i * 0.2) * 2;
+            ctx.beginPath();
+            ctx.moveTo(i - 3, -7);
+            ctx.lineTo(i, -7 - spikeHeight);
+            ctx.lineTo(i + 3, -7);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // 4. Main Body Ellipse (Elongated lizard body)
         ctx.beginPath();
-        ctx.ellipse(0, 0, 24, 16, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 0, 26, 10, 0, 0, Math.PI * 2);
         ctx.fillStyle = bodyColor;
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = 6;
         ctx.shadowColor = bodyColor;
         ctx.fill();
-        ctx.shadowBlur = 0; // Reset shadow
+        ctx.shadowBlur = 0;
 
-        // Colored Stripes
-        ctx.strokeStyle = stripeColor;
-        ctx.lineWidth = 3;
+        // 5. Head
         ctx.beginPath();
-        ctx.arc(-4, 0, 12, Math.PI * 0.7, Math.PI * 1.3);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(4, 0, 10, Math.PI * 0.7, Math.PI * 1.3);
-        ctx.stroke();
-
-        // Draw Fin
-        ctx.save();
-        ctx.translate(-5, 6);
-        ctx.rotate(Math.sin(this.wiggle * 1.5) * 0.2);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 6, 10, Math.PI / 4, 0, Math.PI * 2);
-        ctx.fillStyle = stripeColor;
+        ctx.ellipse(22, -4, 9, 7, 0.1, 0, Math.PI * 2);
         ctx.fill();
-        ctx.restore();
 
-        // Draw Eye
+        // 6. Eye (Beady lizard eye)
         ctx.beginPath();
-        ctx.arc(12, -4, 4, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
+        ctx.arc(22, -6, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#f1c40f';
         ctx.fill();
-        // Pupil
         ctx.beginPath();
-        ctx.arc(this.hunger < 50 && !this.isDead ? 14 : 13, -4, 2, 0, Math.PI * 2);
+        ctx.arc(22, -6, 1, 0, Math.PI * 2);
         ctx.fillStyle = '#000000';
         ctx.fill();
 
-        // Mouth (open if hungry/dead)
-        ctx.beginPath();
-        if (this.isDead) {
-            // X's for eyes instead of normal pupil (optional, let's keep pupil black but float upside down)
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 1.5;
+        // 7. Darting Tongue
+        if (this.tongueTimer > 0) {
+            ctx.strokeStyle = '#ff7675'; // pink tongue
+            ctx.lineWidth = 2.5;
             ctx.beginPath();
-            ctx.moveTo(18, 2);
-            ctx.lineTo(22, 5);
-            ctx.stroke();
-        } else if (this.hunger < 50) {
-            // Open hungry mouth
-            ctx.arc(20, 2, 3, 0, Math.PI, false);
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-        } else {
-            // Happy closed mouth
-            ctx.arc(20, 1, 3, 0, Math.PI * 0.5, false);
-            ctx.strokeStyle = '#333';
-            ctx.lineWidth = 1.5;
+            ctx.moveTo(29, -2);
+            ctx.lineTo(38, -2);
+            // Forked tip
+            ctx.moveTo(38, -2);
+            ctx.lineTo(41, -4);
+            ctx.moveTo(38, -2);
+            ctx.lineTo(41, 0);
             ctx.stroke();
         }
 

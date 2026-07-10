@@ -1,4 +1,4 @@
-// UI, Audio Synthesizer, and State Manager
+// UI, Audio Synthesizer, and State Manager - Iguana Theme
 
 class AudioManager {
     constructor() {
@@ -14,44 +14,60 @@ class AudioManager {
         }
     }
 
-    playBubble() {
+    playRustle() {
         this.init();
         if (!this.ctx) return;
 
-        const osc = this.ctx.createOscillator();
+        // White noise node for forest rustle sound
+        const bufferSize = this.ctx.sampleRate * 0.1; // 100ms
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1000, this.ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(1800, this.ctx.currentTime + 0.1);
+
         const gain = this.ctx.createGain();
-        osc.connect(gain);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+
+        noise.connect(filter);
+        filter.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.15);
-
-        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
-
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.15);
+        noise.start();
+        noise.stop(this.ctx.currentTime + 0.1);
     }
 
     playEat() {
         this.init();
         if (!this.ctx) return;
 
+        // Low crunch sound
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.1);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(120, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(30, this.ctx.currentTime + 0.12);
 
-        gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
 
         osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
+        osc.stop(this.ctx.currentTime + 0.12);
+        
+        // Quick rustle overlap for bite crunch
+        setTimeout(() => this.playRustle(), 30);
     }
 
     playCoin() {
@@ -68,16 +84,16 @@ class AudioManager {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, now + delay);
 
-            gain.gain.setValueAtTime(0.15, now + delay);
+            gain.gain.setValueAtTime(0.12, now + delay);
             gain.gain.linearRampToValueAtTime(0.001, now + delay + duration);
 
             osc.start(now + delay);
             osc.stop(now + delay + duration);
         };
 
-        playTone(523.25, 0, 0.08); // C5
-        playTone(659.25, 0.05, 0.08); // E5
-        playTone(783.99, 0.1, 0.15); // G5
+        playTone(587.33, 0, 0.08); // D5
+        playTone(739.99, 0.05, 0.08); // F#5
+        playTone(880.00, 0.1, 0.15); // A5
     }
 
     playUpgrade() {
@@ -94,16 +110,17 @@ class AudioManager {
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(freq, now + delay);
 
-            gain.gain.setValueAtTime(0.2, now + delay);
+            gain.gain.setValueAtTime(0.15, now + delay);
             gain.gain.linearRampToValueAtTime(0.001, now + delay + duration);
 
             osc.start(now + delay);
             osc.stop(now + delay + duration);
         };
 
-        playTone(587.33, 0, 0.1); // D5
-        playTone(698.46, 0.1, 0.1); // F5
-        playTone(880.00, 0.2, 0.25); // A5
+        playTone(523.25, 0, 0.1); // C5
+        playTone(659.25, 0.08, 0.1); // E5
+        playTone(783.99, 0.16, 0.1); // G5
+        playTone(1046.50, 0.24, 0.25); // C6
     }
 
     playVictory() {
@@ -120,16 +137,16 @@ class AudioManager {
             osc.type = 'sine';
             osc.frequency.setValueAtTime(freq, now + delay);
 
-            gain.gain.setValueAtTime(0.25, now + delay);
+            gain.gain.setValueAtTime(0.2, now + delay);
             gain.gain.linearRampToValueAtTime(0.001, now + delay + duration);
 
             osc.start(now + delay);
             osc.stop(now + delay + duration);
         };
 
-        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        const notes = [587.33, 739.99, 880.00, 1174.66]; // D5, F#5, A5, D6
         notes.forEach((freq, idx) => {
-            playTone(freq, idx * 0.12, 0.3);
+            playTone(freq, idx * 0.12, 0.35);
         });
     }
 }
@@ -142,9 +159,10 @@ export class GameState {
             coins: 150,
             fishCount: 0,
             maxFood: 2,
-            foodQuality: 1, // 1: Bronze, 2: Silver, 3: Gold
+            foodQuality: 1, // 1: Raw, 2: Roasted, 3: Golden Deluxe
             hasSnail: false,
             eggProgress: 0, // 0 to 3
+            feedTargetName: '', // Question input
             stats: {
                 totalCoins: 150,
                 fishPurchased: 0,
@@ -156,11 +174,10 @@ export class GameState {
     }
 
     load() {
-        const saved = localStorage.getItem('aquafeed_save');
+        const saved = localStorage.getItem('iguana_sanctuary_save');
         if (saved) {
             try {
                 this.state = JSON.parse(saved);
-                // Ensure stats exist
                 if (!this.state.stats) {
                     this.state.stats = { ...this.defaultState.stats };
                 }
@@ -173,7 +190,7 @@ export class GameState {
     }
 
     save() {
-        localStorage.setItem('aquafeed_save', JSON.stringify(this.state));
+        localStorage.setItem('iguana_sanctuary_save', JSON.stringify(this.state));
     }
 
     reset() {
@@ -181,7 +198,6 @@ export class GameState {
         this.save();
     }
 
-    // Costs getters
     getFishCost() {
         return 100 + (this.state.stats.fishPurchased * 25);
     }

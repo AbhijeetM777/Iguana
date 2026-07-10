@@ -1,10 +1,10 @@
-// Main Game Loop, Input Handlers, UI controller and Engine
+// Main Game Loop, Input Handlers, UI controller and Engine - Iguana Theme
 
 import { audio, stateManager, FOOD_COST } from './ui.js';
-import { Fish } from './fish.js';
+import { Iguana } from './iguana.js';
 import { Food } from './food.js';
 import { Coin } from './coin.js';
-import { Snail } from './snail.js';
+import { Tortoise } from './tortoise.js';
 
 class GameEngine {
     constructor() {
@@ -12,11 +12,11 @@ class GameEngine {
         this.ctx = this.canvas.getContext('2d');
         
         // Entity arrays
-        this.fishList = [];
+        this.iguanaList = [];
         this.foodList = [];
         this.coinList = [];
-        this.snail = null;
-        this.bubbles = [];
+        this.tortoise = null;
+        this.bubbles = []; // ambient air/spore bubbles
         this.particles = [];
 
         // Ambient rays angle
@@ -25,15 +25,15 @@ class GameEngine {
         // Game loop states
         this.lastTime = 0;
         this.secondsTimer = 0;
+        this.gameStarted = false;
 
-        // Initialize everything
+        // Initialize canvas and core settings
         this.initCanvas();
-        this.loadGameEntities();
         this.setupEventListeners();
         this.spawnInitialBubbles();
 
-        // Start loop
-        requestAnimationFrame((t) => this.loop(t));
+        // Handle the Name Input Prompt before game starts
+        this.checkNameRequirement();
     }
 
     initCanvas() {
@@ -49,29 +49,66 @@ class GameEngine {
         this.canvas.style.height = `${this.height}px`;
     }
 
+    checkNameRequirement() {
+        const state = stateManager.state;
+        const nameModal = document.getElementById('name-modal');
+        const overlay = document.getElementById('modal-overlay');
+        const nameInput = document.getElementById('input-target-name');
+
+        if (state.feedTargetName) {
+            // Fill with previously used name
+            nameInput.value = state.feedTargetName;
+        }
+
+        // Show the prompt, hide other modals inside overlay
+        overlay.classList.remove('hidden');
+        nameModal.classList.remove('hidden');
+        document.getElementById('stats-modal').classList.add('hidden');
+        document.getElementById('victory-modal').classList.add('hidden');
+    }
+
+    startGameLoop(targetName) {
+        // Save target name to state
+        stateManager.state.feedTargetName = targetName.trim() || 'Chicken';
+        stateManager.save();
+
+        // Hide prompt overlay
+        document.getElementById('modal-overlay').classList.add('hidden');
+        document.getElementById('name-modal').classList.add('hidden');
+
+        // Load entities
+        this.loadGameEntities();
+
+        // Start game loop if not already running
+        if (!this.gameStarted) {
+            this.gameStarted = true;
+            requestAnimationFrame((t) => this.loop(t));
+        }
+    }
+
     loadGameEntities() {
         const state = stateManager.state;
 
-        // Spawning fish based on saved count or default to 2
+        // Spawn Iguanas
         const count = state.fishCount > 0 ? state.fishCount : 2;
-        this.fishList = [];
+        this.iguanaList = [];
         for (let i = 0; i < count; i++) {
-            this.fishList.push(new Fish(
+            this.iguanaList.push(new Iguana(
                 50 + Math.random() * (this.width - 100),
                 100 + Math.random() * (this.height - 200)
             ));
         }
-        // Save initial 2 fish count back if it was 0
+
         if (state.fishCount === 0) {
             state.fishCount = 2;
             stateManager.save();
         }
 
-        // Spawn snail if unlocked
+        // Spawn Tortoise Helper
         if (state.hasSnail) {
-            this.snail = new Snail(this.width / 2, this.height - 20);
+            this.tortoise = new Tortoise(this.width / 2, this.height - 20);
         } else {
-            this.snail = null;
+            this.tortoise = null;
         }
 
         this.updateHUD();
@@ -79,92 +116,103 @@ class GameEngine {
     }
 
     spawnInitialBubbles() {
+        // Ambient green spore particles floating upwards
         for (let i = 0; i < 15; i++) {
             this.bubbles.push({
                 x: Math.random() * this.width,
                 y: Math.random() * this.height,
-                size: 2 + Math.random() * 6,
-                speed: 0.5 + Math.random() * 1.2,
+                size: 1.5 + Math.random() * 4,
+                speed: 0.3 + Math.random() * 0.8,
                 sway: Math.random() * 100
             });
         }
     }
 
     setupEventListeners() {
-        // Window Resize
         window.addEventListener('resize', () => this.initCanvas());
 
-        // Tap/Click interaction on Canvas
-        this.canvas.addEventListener('pointerdown', (e) => this.handleTap(e));
+        this.canvas.addEventListener('pointerdown', (e) => {
+            if (!this.gameStarted) return;
+            this.handleTap(e);
+        });
 
-        // Shop Toggle
+        // Start Game Button click
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            const nameInput = document.getElementById('input-target-name');
+            if (nameInput.value.trim() === '') {
+                alert('Please enter a name first!');
+                return;
+            }
+            audio.playUpgrade();
+            this.startGameLoop(nameInput.value);
+        });
+
+        // Shop Drawer Toggle
         const drawer = document.getElementById('shop-drawer');
         const handle = document.getElementById('drawer-handle');
         handle.addEventListener('click', () => {
             drawer.classList.toggle('closed');
-            audio.playBubble();
+            audio.playRustle();
         });
 
         // Shop Items Purchasing
-        document.getElementById('shop-buy-fish').addEventListener('click', () => this.buyFish());
+        document.getElementById('shop-buy-fish').addEventListener('click', () => this.buyIguana());
         document.getElementById('shop-upgrade-food-qty').addEventListener('click', () => this.upgradeFoodQty());
         document.getElementById('shop-upgrade-food-qual').addEventListener('click', () => this.upgradeFoodQual());
-        document.getElementById('shop-buy-snail').addEventListener('click', () => this.buySnail());
+        document.getElementById('shop-buy-snail').addEventListener('click', () => this.buyTortoise());
         document.getElementById('shop-buy-egg').addEventListener('click', () => this.buyEggPart());
 
         // Stats Modal Buttons
         document.getElementById('btn-stats').addEventListener('click', () => {
             this.openStatsModal();
-            audio.playBubble();
+            audio.playRustle();
         });
         document.getElementById('btn-close-stats').addEventListener('click', () => {
             this.closeModals();
-            audio.playBubble();
+            audio.playRustle();
         });
         document.getElementById('btn-reset-game').addEventListener('click', () => {
-            if (confirm('Are you sure you want to reset all progress?')) {
+            if (confirm('Are you sure you want to reset all sanctuary progress?')) {
                 stateManager.reset();
-                this.loadGameEntities();
                 this.closeModals();
-                this.showToast('Aquarium reset successfully!');
+                this.checkNameRequirement(); // Re-prompt name at reset
+                this.showToast('Sanctuary reset successfully!');
             }
         });
 
         // Victory Modal Buttons
         document.getElementById('btn-victory-continue').addEventListener('click', () => {
             this.closeModals();
-            audio.playBubble();
+            audio.playRustle();
         });
         document.getElementById('btn-victory-reset').addEventListener('click', () => {
             stateManager.reset();
-            this.loadGameEntities();
             this.closeModals();
-            this.showToast('New aquarium started!');
+            this.checkNameRequirement(); // Start new game with fresh name
+            this.showToast('New sanctuary started!');
         });
     }
 
     handleTap(e) {
-        // Get correct coordinates relative to the canvas bounding box
         const rect = this.canvas.getBoundingClientRect();
         const tapX = e.clientX - rect.left;
         const tapY = e.clientY - rect.top;
 
-        // 1. Try to collect close coins first
+        // Collect coins
         let coinCollected = false;
         for (const coin of this.coinList) {
             if (coin.isCollected) continue;
             const dist = Math.hypot(coin.x - tapX, coin.y - tapY);
-            // generous tap area on phones (40px radius)
             if (dist < 45) {
                 this.collectCoinEntity(coin);
                 coinCollected = true;
-                break; // Collect one coin per tap
+                break;
             }
         }
 
         if (coinCollected) return;
 
-        // 2. Drop food if tap is inside the tank area (not overlapping HUD or Shop)
+        // Drop food
         if (tapY > 80 && tapY < this.height - 60) {
             this.dropFood(tapX, tapY);
         }
@@ -172,41 +220,30 @@ class GameEngine {
 
     dropFood(x, y) {
         const state = stateManager.state;
-
-        // Check food limits
         const activeFoodCount = this.foodList.filter(f => !f.isEaten).length;
         if (activeFoodCount >= state.maxFood) {
-            this.showToast('Max food limit reached! Upgrade capacity.');
+            this.showToast('Max feeding limit reached! Upgrade capacity.');
             return;
         }
 
-        // Cost check
         if (state.coins < FOOD_COST) {
             this.showToast('Not enough coins to buy food! (Cost: 🪙5)');
             return;
         }
 
-        // Deduct money & record stats
         state.coins -= FOOD_COST;
         state.stats.foodDropped++;
         stateManager.save();
         this.updateHUD();
 
-        // Spawn food
         this.foodList.push(new Food(x, y, state.foodQuality));
-        audio.playBubble();
+        audio.playRustle();
         this.updateShopButtons();
-
-        // Create ripple particles at tap location
         this.spawnRipple(x, y);
     }
 
     collectCoinEntity(coin) {
-        // Play coin sound
         audio.playCoin();
-
-        // Send coin flying towards the HUD coin tracker location
-        // Top-left is roughly x: 45, y: 35
         coin.collect(45, 35);
     }
 
@@ -216,18 +253,18 @@ class GameEngine {
             this.particles.push({
                 x: x,
                 y: y,
-                vx: Math.cos(angle) * 1.5,
-                vy: Math.sin(angle) * 1.5,
-                radius: 1.5 + Math.random() * 2,
-                color: 'rgba(255, 255, 255, 0.6)',
+                vx: Math.cos(angle) * 1.4,
+                vy: Math.sin(angle) * 1.4,
+                radius: 1.5 + Math.random() * 1.5,
+                color: 'rgba(46, 204, 113, 0.5)',
                 alpha: 1,
-                life: 30
+                life: 25
             });
         }
     }
 
     spawnEatParticles(x, y, color) {
-        for (let i = 0; i < 6; i++) {
+        for (let i = 0; i < 7; i++) {
             this.particles.push({
                 x: x,
                 y: y,
@@ -241,8 +278,7 @@ class GameEngine {
         }
     }
 
-    // --- Shop Buy Methods ---
-    buyFish() {
+    buyIguana() {
         const cost = stateManager.getFishCost();
         if (stateManager.state.coins >= cost) {
             stateManager.state.coins -= cost;
@@ -250,14 +286,13 @@ class GameEngine {
             stateManager.state.stats.fishPurchased++;
             stateManager.save();
 
-            // Spawn new fish
-            this.fishList.push(new Fish(
+            this.iguanaList.push(new Iguana(
                 Math.random() * this.width,
                 150 + Math.random() * (this.height - 300)
             ));
 
             audio.playUpgrade();
-            this.showToast('New Guppy joined your tank!');
+            this.showToast('New Iguana joined your sanctuary!');
             this.updateHUD();
             this.updateShopButtons();
         }
@@ -271,7 +306,7 @@ class GameEngine {
             stateManager.save();
 
             audio.playUpgrade();
-            this.showToast(`Max food increased to ${stateManager.state.maxFood}!`);
+            this.showToast(`Max feeding capacity increased to ${stateManager.state.maxFood}!`);
             this.updateHUD();
             this.updateShopButtons();
         }
@@ -285,24 +320,24 @@ class GameEngine {
             stateManager.save();
 
             audio.playUpgrade();
-            const qualityName = stateManager.state.foodQuality === 2 ? 'Silver Pellet' : 'Gold Pellet';
-            this.showToast(`Food upgraded to ${qualityName}!`);
+            const qualityName = stateManager.state.foodQuality === 2 ? 'Roasted Chicken' : 'Deluxe Glazed Chicken';
+            this.showToast(`Feed upgraded to ${qualityName}!`);
             this.updateHUD();
             this.updateShopButtons();
         }
     }
 
-    buySnail() {
+    buyTortoise() {
         const cost = stateManager.getSnailCost();
         if (stateManager.state.coins >= cost && !stateManager.state.hasSnail) {
             stateManager.state.coins -= cost;
             stateManager.state.hasSnail = true;
             stateManager.save();
 
-            this.snail = new Snail(this.width / 2, this.height - 20);
+            this.tortoise = new Tortoise(this.width / 2, this.height - 20);
 
             audio.playUpgrade();
-            this.showToast('Snail helper unlocked!');
+            this.showToast('Tortoise helper unlocked!');
             this.updateHUD();
             this.updateShopButtons();
         }
@@ -316,11 +351,10 @@ class GameEngine {
             stateManager.save();
 
             audio.playUpgrade();
-            this.showToast(`Hatched egg part ${stateManager.state.eggProgress}/3!`);
+            this.showToast(`Hatched dragon egg part ${stateManager.state.eggProgress}/3!`);
             this.updateHUD();
             this.updateShopButtons();
 
-            // Check Win Condition
             if (stateManager.state.eggProgress === 3) {
                 this.triggerVictory();
             }
@@ -350,34 +384,31 @@ class GameEngine {
         document.getElementById('victory-modal').classList.add('hidden');
     }
 
-    // --- UI Update Helpers ---
     updateHUD() {
         document.getElementById('coin-count').textContent = stateManager.state.coins;
-        // Count only living fish
-        const liveFish = this.fishList.filter(f => !f.isDead).length;
-        document.getElementById('fish-count').textContent = liveFish;
+        const liveIguanas = this.iguanaList.filter(i => !i.isDead).length;
+        document.getElementById('fish-count').textContent = liveIguanas;
         
-        // Save current alive fish count
-        stateManager.state.fishCount = this.fishList.length;
+        stateManager.state.fishCount = this.iguanaList.length;
         stateManager.save();
     }
 
     updateShopButtons() {
         const state = stateManager.state;
 
-        // 1. Buy Guppy Button
+        // Buy Iguana Button
         const fishBtn = document.getElementById('shop-buy-fish');
         const fishCost = stateManager.getFishCost();
         document.getElementById('cost-buy-fish').textContent = `🪙 ${fishCost}`;
         this.toggleBtnState(fishBtn, state.coins >= fishCost);
 
-        // 2. Food Qty Button
+        // Food Qty Button
         const qtyBtn = document.getElementById('shop-upgrade-food-qty');
         const qtyCost = stateManager.getFoodQtyCost();
         document.getElementById('cost-food-qty').textContent = `🪙 ${qtyCost}`;
         this.toggleBtnState(qtyBtn, state.coins >= qtyCost);
 
-        // 3. Food Qual Button
+        // Food Qual Button
         const qualBtn = document.getElementById('shop-upgrade-food-qual');
         const qualCost = stateManager.getFoodQualCost();
         const costLabel = document.getElementById('cost-food-qual');
@@ -391,7 +422,7 @@ class GameEngine {
             this.toggleBtnState(qualBtn, state.coins >= qualCost);
         }
 
-        // 4. Snail Helper Button
+        // Tortoise Helper Button
         const snailBtn = document.getElementById('shop-buy-snail');
         const snailCost = stateManager.getSnailCost();
         const snailLabel = document.getElementById('cost-buy-snail');
@@ -405,7 +436,7 @@ class GameEngine {
             this.toggleBtnState(snailBtn, state.coins >= snailCost);
         }
 
-        // 5. Egg Progress Button
+        // Egg Progress Button
         const eggBtn = document.getElementById('shop-buy-egg');
         const eggCost = stateManager.getEggCost();
         const eggLabel = document.getElementById('cost-buy-egg');
@@ -427,7 +458,6 @@ class GameEngine {
             btn.style.pointerEvents = 'auto';
         } else {
             btn.classList.add('disabled');
-            // Allow pointerEvents only if it's maxed/owned so the hover state/text is viewable
             if (btn.classList.contains('maxed')) {
                 btn.style.pointerEvents = 'none';
             }
@@ -441,18 +471,16 @@ class GameEngine {
         toast.textContent = message;
         container.appendChild(toast);
 
-        // Remove after animation completes (2.5s)
         setTimeout(() => {
             toast.remove();
         }, 2500);
     }
 
-    // --- Main Game Loop ---
+    // Game loop
     loop(timestamp) {
         const delta = timestamp - this.lastTime;
         this.lastTime = timestamp;
 
-        // Update time tracking
         this.secondsTimer += delta;
         if (this.secondsTimer >= 1000) {
             stateManager.state.stats.timeElapsed += 1;
@@ -469,25 +497,22 @@ class GameEngine {
     update() {
         const state = stateManager.state;
 
-        // 1. Update Fish List
-        for (let i = this.fishList.length - 1; i >= 0; i--) {
-            const fish = this.fishList[i];
+        // 1. Update Iguanas List
+        for (let i = this.iguanaList.length - 1; i >= 0; i--) {
+            const iguana = this.iguanaList[i];
             
-            // Check if fish ate in its update cycle
-            fish.hasEaten = false;
-            fish.update(this.foodList, this.width, this.height, (x, y, value) => {
-                // Spawning coin callback
+            iguana.hasEaten = false;
+            iguana.update(this.foodList, this.width, this.height, (x, y, value) => {
                 this.coinList.push(new Coin(x, y, value));
             });
 
-            if (fish.hasEaten) {
+            if (iguana.hasEaten) {
                 audio.playEat();
-                this.spawnEatParticles(fish.x + (fish.isFacingRight ? 15 : -15), fish.y, '#55efc4');
+                this.spawnEatParticles(iguana.x + (iguana.isFacingRight ? 18 : -18), iguana.y, '#e74c3c');
             }
 
-            // Remove fish if dead and floated to top long enough
-            if (fish.isDead && fish.deathTimer > 300) {
-                this.fishList.splice(i, 1);
+            if (iguana.isDead && iguana.deathTimer > 300) {
+                this.iguanaList.splice(i, 1);
                 this.updateHUD();
             }
         }
@@ -497,15 +522,14 @@ class GameEngine {
             const food = this.foodList[i];
             food.update(this.height);
 
-            // Clean up eaten or dissolved food
             if (food.isEaten) {
                 this.foodList.splice(i, 1);
             }
         }
 
-        // 3. Update Snail Helper
-        if (this.snail) {
-            this.snail.update(this.coinList, this.width, this.height, (coin) => {
+        // 3. Update Tortoise Helper
+        if (this.tortoise) {
+            this.tortoise.update(this.coinList, this.width, this.height, (coin) => {
                 this.collectCoinEntity(coin);
             });
         }
@@ -516,25 +540,22 @@ class GameEngine {
             const finishedCollecting = coin.update(this.height);
 
             if (finishedCollecting) {
-                // Apply coin value to state
                 state.coins += coin.value;
                 state.stats.totalCoins += coin.value;
                 stateManager.save();
                 this.updateHUD();
                 this.updateShopButtons();
 
-                // Sparkle particles at HUD
                 this.spawnRipple(coin.x, coin.y);
-
                 this.coinList.splice(i, 1);
             }
         }
 
-        // 5. Update Ambient Bubbles
+        // 5. Update Ambient Spores (formerly bubbles)
         for (const bubble of this.bubbles) {
             bubble.y -= bubble.speed;
-            bubble.sway += 0.02;
-            bubble.x += Math.sin(bubble.sway) * 0.3;
+            bubble.sway += 0.015;
+            bubble.x += Math.sin(bubble.sway) * 0.25;
 
             if (bubble.y < -10) {
                 bubble.y = this.height + 10;
@@ -559,14 +580,14 @@ class GameEngine {
     draw() {
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        // 1. Draw Ambient Light Rays
-        this.rayAngle += 0.005;
+        // 1. Forest light rays filtering down
+        this.rayAngle += 0.003;
         this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 210, 255, 0.03)';
+        this.ctx.fillStyle = 'rgba(46, 204, 113, 0.04)';
         for (let i = 0; i < 4; i++) {
             const angleOffset = this.rayAngle + (i * Math.PI / 2);
-            const w1 = Math.sin(angleOffset) * 40 + 60;
-            const w2 = Math.cos(angleOffset) * 60 + 80;
+            const w1 = Math.sin(angleOffset) * 45 + 55;
+            const w2 = Math.cos(angleOffset) * 55 + 75;
 
             this.ctx.beginPath();
             this.ctx.moveTo(this.width / 2, 0);
@@ -577,10 +598,10 @@ class GameEngine {
         }
         this.ctx.restore();
 
-        // 2. Draw Bubbles
+        // 2. Draw Spores
         this.ctx.save();
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-        this.ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        this.ctx.strokeStyle = 'rgba(46, 204, 113, 0.15)';
+        this.ctx.fillStyle = 'rgba(46, 204, 113, 0.05)';
         this.ctx.lineWidth = 1;
         for (const bubble of this.bubbles) {
             this.ctx.beginPath();
@@ -590,12 +611,12 @@ class GameEngine {
         }
         this.ctx.restore();
 
-        // 3. Draw Snail Helper
-        if (this.snail) {
-            this.snail.draw(this.ctx);
+        // 3. Draw Tortoise Helper
+        if (this.tortoise) {
+            this.tortoise.draw(this.ctx);
         }
 
-        // 4. Draw Food Pellets
+        // 4. Draw Food Pellets (Chicken Drumsticks)
         for (const food of this.foodList) {
             food.draw(this.ctx);
         }
@@ -605,9 +626,9 @@ class GameEngine {
             coin.draw(this.ctx);
         }
 
-        // 6. Draw Fish
-        for (const fish of this.fishList) {
-            fish.draw(this.ctx);
+        // 6. Draw Iguanas
+        for (const iguana of this.iguanaList) {
+            iguana.draw(this.ctx);
         }
 
         // 7. Draw Particles

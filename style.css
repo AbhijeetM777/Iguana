@@ -1,12 +1,12 @@
 /* Reset & Core variables */
 :root {
-    --bg-color: #0b1a30;
-    --primary-color: #00d2ff;
+    --bg-color: #0c2012;
+    --primary-color: #2ecc71;
     --accent-color: #ffd700;
     --text-color: #ffffff;
-    --glass-bg: rgba(15, 32, 67, 0.65);
-    --glass-border: rgba(0, 210, 255, 0.25);
-    --danger-color: #ff4757;
+    --glass-bg: rgba(12, 32, 18, 0.7);
+    --glass-border: rgba(46, 204, 113, 0.25);
+    --danger-color: #e74c3c;
     --safe-area-top: env(safe-area-inset-top, 16px);
     --safe-area-bottom: env(safe-area-inset-bottom, 16px);
 }
@@ -36,7 +36,7 @@ body, html {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: radial-gradient(circle at 50% 30%, #0d2c54 0%, #061022 100%);
+    background: radial-gradient(circle at 50% 30%, #11381c 0%, #06140b 100%);
 }
 
 /* Canvas fills the screen */
@@ -58,7 +58,7 @@ body, html {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    pointer-events: none; /* Let clicks pass through to canvas underneath if not clicking HUD items */
+    pointer-events: none;
 }
 
 .hud-item {
@@ -111,7 +111,7 @@ body, html {
 
 .hud-btn:active {
     transform: scale(0.9);
-    background-color: rgba(0, 210, 255, 0.2);
+    background-color: rgba(46, 204, 113, 0.2);
 }
 
 /* Toast/Notification Message overlay */
@@ -130,9 +130,9 @@ body, html {
 }
 
 .toast {
-    background: rgba(15, 32, 67, 0.95);
+    background: rgba(12, 32, 18, 0.95);
     border: 1px solid var(--primary-color);
-    box-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.4);
     padding: 10px 16px;
     border-radius: 12px;
     text-align: center;
@@ -157,7 +157,7 @@ body, html {
 }
 
 #shop-drawer.closed {
-    transform: translateY(calc(100% - 50px)); /* Shows just the handle bar */
+    transform: translateY(calc(100% - 50px));
 }
 
 .drawer-handle-bar {
@@ -196,11 +196,11 @@ body, html {
     padding: 0 16px 12px;
     gap: 12px;
     scroll-snap-type: x mandatory;
-    scrollbar-width: none; /* Hide scrollbar Firefox */
+    scrollbar-width: none;
 }
 
 .shop-items::-webkit-scrollbar {
-    display: none; /* Hide scrollbar Chrome/Safari */
+    display: none;
 }
 
 .shop-card {
@@ -270,7 +270,7 @@ body, html {
     width: 100%;
     height: 100%;
     z-index: 100;
-    background: rgba(4, 10, 20, 0.8);
+    background: rgba(4, 15, 8, 0.85);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     display: flex;
@@ -298,6 +298,38 @@ body, html {
     font-weight: 800;
     text-align: center;
     color: var(--primary-color);
+}
+
+.modal-content p {
+    text-align: center;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Input Container styling */
+.input-container {
+    width: 100%;
+}
+
+#input-target-name {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid var(--glass-border);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    color: #fff;
+    font-family: inherit;
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#input-target-name:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.3);
 }
 
 .stats-grid {
@@ -334,16 +366,17 @@ body, html {
     font-size: 0.95rem;
     cursor: pointer;
     transition: transform 0.2s, opacity 0.2s;
+    text-align: center;
 }
 
 .primary-btn {
-    background: linear-gradient(135deg, #00d2ff 0%, #00a8ff 100%);
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
     color: #ffffff;
-    box-shadow: 0 4px 15px rgba(0, 210, 255, 0.4);
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
 }
 
 .danger-btn {
-    background: rgba(255, 71, 87, 0.2);
+    background: rgba(231, 76, 60, 0.2);
     border: 1px solid var(--danger-color);
     color: var(--danger-color);
 }
@@ -357,13 +390,6 @@ body, html {
     font-size: 4rem;
     text-align: center;
     animation: spinWin 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-#victory-modal p {
-    text-align: center;
-    line-height: 1.5;
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.8);
 }
 
 /* Utility Helpers */

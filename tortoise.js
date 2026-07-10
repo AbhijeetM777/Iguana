@@ -1,15 +1,15 @@
-// Snail Helper Class
+// Tortoise Helper Class (seabed helper re-themed for forest)
 
-export class Snail {
+export class Tortoise {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.speed = 1.0;
+        this.speed = 0.85; // slightly slower but steady tortoise
         this.vx = 0;
-        this.radius = 12;
+        this.radius = 14;
         this.isFacingRight = true;
         this.wiggle = 0;
-        this.wiggleSpeed = 0.08;
+        this.wiggleSpeed = 0.05;
     }
 
     update(coins, canvasWidth, canvasHeight, onCollectCoin) {
@@ -24,9 +24,7 @@ export class Snail {
         // Find closest coin resting on the bottom
         for (const coin of coins) {
             if (coin.isCollected) continue;
-            // Only care about X-distance because snail is bound to bottom
             const dist = Math.abs(coin.x - this.x);
-            // Snail only collects if the coin is reasonably low (near the bottom)
             if (coin.y >= canvasHeight - 35 && dist < closestDist) {
                 closestDist = dist;
                 targetCoin = coin;
@@ -40,24 +38,23 @@ export class Snail {
                 this.x += this.vx;
                 this.isFacingRight = this.vx > 0;
             } else {
-                // Collect coin!
                 onCollectCoin(targetCoin);
                 this.vx = 0;
             }
         } else {
-            // Idle wander on the bottom
-            if (Math.random() < 0.02) {
-                this.vx = (Math.random() > 0.5 ? 1 : -1) * this.speed * 0.5;
+            // Idle wander
+            if (Math.random() < 0.015) {
+                this.vx = (Math.random() > 0.5 ? 1 : -1) * this.speed * 0.4;
             }
             this.x += this.vx;
             
             // Boundary constraints
             if (this.x < 20) {
                 this.x = 20;
-                this.vx = this.speed * 0.5;
+                this.vx = this.speed * 0.4;
             } else if (this.x > canvasWidth - 20) {
                 this.x = canvasWidth - 20;
-                this.vx = -this.speed * 0.5;
+                this.vx = -this.speed * 0.4;
             }
 
             if (Math.abs(this.vx) > 0.05) {
@@ -74,49 +71,52 @@ export class Snail {
             ctx.scale(-1, 1);
         }
 
-        // Draw Shell
+        // Draw Stubby legs wiggling
+        ctx.fillStyle = '#26c6da'; // Turquoise-green body/legs
+        const legOffset = Math.sin(this.wiggle) * 2;
+        
         ctx.beginPath();
-        ctx.arc(-2, -6, 9, 0, Math.PI * 2);
-        ctx.fillStyle = '#d27d2d'; // Golden brown shell
+        // Back leg
+        ctx.roundRect(-8, -4, 4, 6, 2);
+        // Front leg
+        ctx.roundRect(4, -4, 4, 6 + legOffset, 2);
+        ctx.fill();
+
+        // Draw Shell (Green tortoise dome)
+        ctx.beginPath();
+        ctx.arc(0, -6, 11, Math.PI, 0, false);
+        ctx.fillStyle = '#1b5e20'; // Dark forest green shell
         ctx.shadowBlur = 4;
-        ctx.shadowColor = '#d27d2d';
+        ctx.shadowColor = '#1b5e20';
         ctx.fill();
         ctx.shadowBlur = 0;
 
-        // Shell spiral line
-        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-        ctx.lineWidth = 1.5;
+        // Shell plates detail
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(-2, -6, 5, 0, Math.PI, false);
+        ctx.arc(0, -6, 7, Math.PI, 0, false);
         ctx.stroke();
 
-        // Draw Snail Body (Procedural crawl wiggle)
-        const stretch = Math.sin(this.wiggle) * 1.5;
-        ctx.fillStyle = '#ffeaa7'; // Light cream body
         ctx.beginPath();
-        ctx.ellipse(3, -2, 10 + stretch, 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Snail Head / Eyestalks
-        ctx.beginPath();
-        ctx.ellipse(9 + stretch, -5, 3, 3, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Eye stems
-        ctx.strokeStyle = '#ffeaa7';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(8 + stretch, -6);
-        ctx.lineTo(9 + stretch, -11);
-        ctx.moveTo(10 + stretch, -6);
-        ctx.lineTo(11 + stretch, -11);
+        ctx.moveTo(0, -6);
+        ctx.lineTo(0, -17);
+        ctx.moveTo(-5, -6);
+        ctx.lineTo(-7, -13);
+        ctx.moveTo(5, -6);
+        ctx.lineTo(7, -13);
         ctx.stroke();
 
-        // Tiny eye dots
+        // Draw Head
+        ctx.beginPath();
+        ctx.ellipse(12, -7, 4.5, 4.5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#26c6da';
+        ctx.fill();
+
+        // Tiny eye dot
         ctx.fillStyle = '#000000';
         ctx.beginPath();
-        ctx.arc(9 + stretch, -11, 0.8, 0, Math.PI * 2);
-        ctx.arc(11 + stretch, -11, 0.8, 0, Math.PI * 2);
+        ctx.arc(13.5, -8, 0.8, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.restore();
